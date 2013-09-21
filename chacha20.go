@@ -50,7 +50,9 @@ type Cipher struct {
 }
 
 // NewCipher creates and returns a new Cipher.  The key argument must be 256
-// bits long, and the nonce argument must be 64 bits long.
+// bits long, and the nonce argument must be 64 bits long. The nonce must be
+// randomly generated or used only once. This Cipher instance must not be used
+// to encrypt more than 2^70 bytes (~1 zettabyte).
 func NewCipher(key []byte, nonce []byte) (*Cipher, error) {
 	if len(key) != KeySize {
 		return nil, ErrInvalidKey
@@ -89,7 +91,9 @@ func NewCipher(key []byte, nonce []byte) (*Cipher, error) {
 }
 
 // XORKeyStream sets dst to the result of XORing src with the key stream.
-// Dst and src may be the same slice but otherwise should not overlap.
+// Dst and src may be the same slice but otherwise should not overlap. You
+// should not encrypt more than 2^70 bytes (~1 zettabyte) without re-keying and
+// using a new nonce.
 func (c *Cipher) XORKeyStream(dst, src []byte) {
 	i := 0
 	for i < len(src) {
