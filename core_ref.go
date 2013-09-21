@@ -1,8 +1,6 @@
 // The ChaCha20 core transform.
 // An unrolled and inlined implementation in pure Go.
 
-// +build !amd64
-
 package chacha20
 
 func core(input, output *[size]uint32) {
