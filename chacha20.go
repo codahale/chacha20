@@ -46,9 +46,9 @@ var (
 
 // A Cipher is an instance of ChaCha20 using a particular key and nonce.
 type Cipher struct {
-	input *[size]uint32 // the input block as words
-	block *[block]byte  // the output block as bytes
-	count int           // the number of unused bytes in the block
+	input [size]uint32 // the input block as words
+	block [block]byte  // the output block as bytes
+	count int          // the number of unused bytes in the block
 }
 
 // NewCipher creates and returns a new Cipher.  The key argument must be 256
@@ -65,8 +65,6 @@ func NewCipher(key []byte, nonce []byte) (*Cipher, error) {
 	}
 
 	c := new(Cipher)
-	c.input = new([size]uint32)
-	c.block = new([block]byte)
 
 	c.input[0] = constants[0]
 	c.input[1] = constants[1]
@@ -122,7 +120,7 @@ func (c *Cipher) Reset() {
 
 // advances the keystream
 func (c *Cipher) advance() {
-	core(c.input, (*[size]uint32)(unsafe.Pointer(c.block)))
+	core(&c.input, (*[size]uint32)(unsafe.Pointer(&c.block)))
 	c.count = block
 	c.input[12]++
 	if c.input[12] == 0 {
