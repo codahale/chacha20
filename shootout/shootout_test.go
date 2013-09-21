@@ -6,7 +6,6 @@ import (
 	"github.com/codahale/chacha20"
 	"crypto/aes"
 	"crypto/rc4"
-	"code.google.com/p/go.crypto/salsa20"
 )
 
 const benchSize = 1024*1024
@@ -41,15 +40,4 @@ func BenchmarkRC4(b *testing.B) {
 	key := make([]byte, 32)
 	c, _ := rc4.NewCipher(key)
 	benchmarkStream(b, c)
-}
-
-func BenchmarkSalsa20(b *testing.B) {
-	key := new([32]byte)
-	nonce := make([]byte, 24)
-	b.SetBytes(benchSize)
-	input := make([]byte, benchSize)
-	output := make([]byte, benchSize)
-	for i := 0; i < b.N; i++ {
-		salsa20.XORKeyStream(output, input, nonce, key)
-	}
 }
