@@ -3,8 +3,8 @@ package chacha20
 import (
 	"bytes"
 	"encoding/hex"
-	"testing"
 	"fmt"
+	"testing"
 )
 
 // stolen from http://tools.ietf.org/html/draft-agl-tls-chacha20poly1305-00#section-7
