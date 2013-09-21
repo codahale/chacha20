@@ -21,6 +21,7 @@ package chacha20
 import (
 	"encoding/binary"
 	"errors"
+	"unsafe"
 )
 
 const (
@@ -45,8 +46,9 @@ var (
 
 // A Cipher is an instance of ChaCha20 using a particular key and nonce.
 type Cipher struct {
-	input, output *[size]uint32
-	count         int
+	input *[size]uint32 // the input block as words
+	block *[block]byte  // the output block as bytes
+	count int           // the number of unused bytes in the block
 }
 
 // NewCipher creates and returns a new Cipher.  The key argument must be 256
@@ -64,7 +66,7 @@ func NewCipher(key []byte, nonce []byte) (*Cipher, error) {
 
 	c := new(Cipher)
 	c.input = new([size]uint32)
-	c.output = new([size]uint32)
+	c.block = new([block]byte)
 
 	c.input[0] = constants[0]
 	c.input[1] = constants[1]
@@ -100,12 +102,9 @@ func (c *Cipher) XORKeyStream(dst, src []byte) {
 		if c.count == 0 {
 			c.advance()
 		}
-
-		offset := block - c.count
-		k := c.output[offset>>2] >> uint((offset&3)<<3)
-		dst[i] = src[i] ^ byte(k)
-		i++
+		dst[i] = src[i] ^ c.block[block-c.count]
 		c.count--
+		i++
 	}
 }
 
@@ -114,14 +113,16 @@ func (c *Cipher) XORKeyStream(dst, src []byte) {
 func (c *Cipher) Reset() {
 	for i := 0; i < size; i++ {
 		c.input[i] = 0
-		c.output[i] = 0
+	}
+	for i := 0; i < block; i++ {
+		c.block[i] = 0
 	}
 	c.count = 0
 }
 
 // advances the keystream
 func (c *Cipher) advance() {
-	core(c.input, c.output)
+	core(c.input, (*[size]uint32)(unsafe.Pointer(c.block)))
 	c.count = block
 	c.input[12]++
 	if c.input[12] == 0 {
