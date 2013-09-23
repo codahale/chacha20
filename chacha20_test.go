@@ -5,7 +5,11 @@ import (
 	"encoding/hex"
 	"fmt"
 	"testing"
+	"crypto/cipher"
 )
+
+// assert that a pointer to Cipher actually meets the cipher.Stream interface
+var _ cipher.Stream = &Cipher{}
 
 // stolen from http://tools.ietf.org/html/draft-agl-tls-chacha20poly1305-00#section-7
 var testVectors = [][]string{
