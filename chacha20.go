@@ -116,7 +116,7 @@ func (c *Cipher) XORKeyStream(dst, src []byte) {
 		i += gap
 		c.offset = o
 
-		if c.offset == blockSize {
+		if o == blockSize {
 			c.advance()
 		}
 	}
