@@ -107,12 +107,15 @@ func (c *Cipher) XORKeyStream(dst, src []byte) {
 			limit = max
 		}
 
+		o := c.offset
 		for j := i; j < limit; j++ {
-			dst[j] = src[j] ^ c.block[c.offset]
-			c.offset++
+			dst[j] = src[j] ^ c.block[o]
+			o++
 		}
 
 		i += gap
+		c.offset = o
+
 		if c.offset == blockSize {
 			c.advance()
 		}
