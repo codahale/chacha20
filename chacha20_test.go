@@ -2,10 +2,10 @@ package chacha20
 
 import (
 	"bytes"
+	"crypto/cipher"
 	"encoding/hex"
 	"fmt"
 	"testing"
-	"crypto/cipher"
 )
 
 // assert that a pointer to Cipher actually meets the cipher.Stream interface
