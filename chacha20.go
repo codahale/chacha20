@@ -40,7 +40,19 @@ var (
 	ErrInvalidKey = errors.New("chacha20: Invalid key length (must be 256 bits)")
 	// ErrInvalidNonce is returned when the provided nonce is not 64 bits long.
 	ErrInvalidNonce = errors.New("chacha20: Invalid nonce length (must be 64 bits)")
+
+	bigEndian bool // we're running on a bigEndian CPU
 )
+
+// Do some up-front bookkeeping on what sort of CPU we're using. ChaCha20 treats
+// its state as a little-endian byte array when it comes to generating the
+// keystream, which allows for a zero-copy approach to the core transform. On
+// big-endian architectures, we have to take a hit to reverse the bytes.
+func init() {
+	x := uint32(0x04030201)
+	y := [4]byte{0x1, 0x2, 0x3, 0x4}
+	bigEndian = *(*[4]byte)(unsafe.Pointer(&x)) != y
+}
 
 // A Cipher is an instance of ChaCha20 using a particular key and nonce.
 type Cipher struct {
@@ -134,9 +146,21 @@ func (c *Cipher) Reset() {
 	c.offset = 0
 }
 
+// BUG(codahale): Totally untested on big-endian CPUs. Would very much
+// appreciate someone with an ARM device giving this a swing.
+
 // advances the keystream
 func (c *Cipher) advance() {
 	core(&c.state, (*[stateSize]uint32)(unsafe.Pointer(&c.block)))
+
+	if bigEndian {
+		j := blockSize - 1
+		for i := 0; i < blockSize/2; i++ {
+			c.block[j], c.block[i] = c.block[i], c.block[j]
+			j--
+		}
+	}
+
 	c.offset = 0
 	i := c.state[12] + 1
 	c.state[12] = i
