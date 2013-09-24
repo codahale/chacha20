@@ -108,10 +108,10 @@ func (c *Cipher) XORKeyStream(dst, src []byte) {
 // Reset zeros the key data so that it will no longer appear in the process's
 // memory.
 func (c *Cipher) Reset() {
-	for i := 0; i < stateSize; i++ {
+	for i := range c.state {
 		c.state[i] = 0
 	}
-	for i := 0; i < blockSize; i++ {
+	for i := range c.block {
 		c.block[i] = 0
 	}
 	c.offset = 0
