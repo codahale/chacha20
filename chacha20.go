@@ -94,11 +94,25 @@ func NewCipher(key []byte, nonce []byte) (*Cipher, error) {
 // should not encrypt more than 2^70 bytes (~1 zettabyte) without re-keying and
 // using a new nonce.
 func (c *Cipher) XORKeyStream(dst, src []byte) {
+	// Stride over the input in 64-byte blocks, minus the amount of keystream
+	// previously used. This will produce best results when processing blocks
+	// of a size evenly divisible by 64.
 	i := 0
-	for i < len(src) {
-		dst[i] = src[i] ^ c.block[c.offset]
-		c.offset++
-		i++
+	max := len(src)
+	for i < max {
+		gap := blockSize - c.offset
+
+		limit := i + gap
+		if limit > max {
+			limit = max
+		}
+
+		for j := i; j < limit; j++ {
+			dst[j] = src[j] ^ c.block[c.offset]
+			c.offset++
+		}
+
+		i += gap
 		if c.offset == blockSize {
 			c.advance()
 		}
