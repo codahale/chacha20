@@ -31,8 +31,8 @@ const (
 	// NonceSize is the length of ChaCha20 nonces, in bytes.
 	NonceSize = 8
 
-	size  = 16       // the size of the state, in words
-	block = size * 4 // the size of the block, in bytes
+	stateSize = 16            // the size of ChaCha20's state, in words
+	blockSize = stateSize * 4 // the size of ChaCha20's block, in bytes
 )
 
 var (
@@ -44,9 +44,9 @@ var (
 
 // A Cipher is an instance of ChaCha20 using a particular key and nonce.
 type Cipher struct {
-	input  [size]uint32 // the input block as words
-	block  [block]byte  // the output block as bytes
-	offset int          // the offset of used bytes in block
+	state  [stateSize]uint32 // the state as an array of 16 32-bit words
+	block  [blockSize]byte   // the keystream as an array of 64 bytes
+	offset int               // the offset of used bytes in block
 }
 
 // NewCipher creates and returns a new Cipher.  The key argument must be 256
@@ -65,24 +65,24 @@ func NewCipher(key []byte, nonce []byte) (*Cipher, error) {
 	c := new(Cipher)
 
 	// the magic constants for 256-bit keys
-	c.input[0] = 0x61707865
-	c.input[1] = 0x3320646e
-	c.input[2] = 0x79622d32
-	c.input[3] = 0x6b206574
+	c.state[0] = 0x61707865
+	c.state[1] = 0x3320646e
+	c.state[2] = 0x79622d32
+	c.state[3] = 0x6b206574
 
-	c.input[4] = binary.LittleEndian.Uint32(key[0:])
-	c.input[5] = binary.LittleEndian.Uint32(key[4:])
-	c.input[6] = binary.LittleEndian.Uint32(key[8:])
-	c.input[7] = binary.LittleEndian.Uint32(key[12:])
-	c.input[8] = binary.LittleEndian.Uint32(key[16:])
-	c.input[9] = binary.LittleEndian.Uint32(key[20:])
-	c.input[10] = binary.LittleEndian.Uint32(key[24:])
-	c.input[11] = binary.LittleEndian.Uint32(key[28:])
+	c.state[4] = binary.LittleEndian.Uint32(key[0:])
+	c.state[5] = binary.LittleEndian.Uint32(key[4:])
+	c.state[6] = binary.LittleEndian.Uint32(key[8:])
+	c.state[7] = binary.LittleEndian.Uint32(key[12:])
+	c.state[8] = binary.LittleEndian.Uint32(key[16:])
+	c.state[9] = binary.LittleEndian.Uint32(key[20:])
+	c.state[10] = binary.LittleEndian.Uint32(key[24:])
+	c.state[11] = binary.LittleEndian.Uint32(key[28:])
 
-	c.input[12] = 0
-	c.input[13] = 0
-	c.input[14] = binary.LittleEndian.Uint32(nonce[0:])
-	c.input[15] = binary.LittleEndian.Uint32(nonce[4:])
+	c.state[12] = 0
+	c.state[13] = 0
+	c.state[14] = binary.LittleEndian.Uint32(nonce[0:])
+	c.state[15] = binary.LittleEndian.Uint32(nonce[4:])
 
 	c.advance()
 
@@ -99,7 +99,7 @@ func (c *Cipher) XORKeyStream(dst, src []byte) {
 		dst[i] = src[i] ^ c.block[c.offset]
 		c.offset++
 		i++
-		if c.offset == block {
+		if c.offset == blockSize {
 			c.advance()
 		}
 	}
@@ -108,10 +108,10 @@ func (c *Cipher) XORKeyStream(dst, src []byte) {
 // Reset zeros the key data so that it will no longer appear in the process's
 // memory.
 func (c *Cipher) Reset() {
-	for i := 0; i < size; i++ {
-		c.input[i] = 0
+	for i := 0; i < stateSize; i++ {
+		c.state[i] = 0
 	}
-	for i := 0; i < block; i++ {
+	for i := 0; i < blockSize; i++ {
 		c.block[i] = 0
 	}
 	c.offset = 0
@@ -119,10 +119,10 @@ func (c *Cipher) Reset() {
 
 // advances the keystream
 func (c *Cipher) advance() {
-	core(&c.input, (*[size]uint32)(unsafe.Pointer(&c.block)))
+	core(&c.state, (*[stateSize]uint32)(unsafe.Pointer(&c.block)))
 	c.offset = 0
-	c.input[12]++
-	if c.input[12] == 0 {
-		c.input[13]++
+	c.state[12]++
+	if c.state[12] == 0 {
+		c.state[13]++
 	}
 }

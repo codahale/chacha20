@@ -3,7 +3,7 @@
 
 package chacha20
 
-func core(input, output *[size]uint32) {
+func core(input, output *[stateSize]uint32) {
 	var (
 		x00 = input[0]
 		x01 = input[1]
