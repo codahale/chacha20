@@ -138,8 +138,9 @@ func (c *Cipher) Reset() {
 func (c *Cipher) advance() {
 	core(&c.state, (*[stateSize]uint32)(unsafe.Pointer(&c.block)))
 	c.offset = 0
-	c.state[12]++
-	if c.state[12] == 0 {
+	i := c.state[12] + 1
+	c.state[12] = i
+	if i == 0 {
 		c.state[13]++
 	}
 }
