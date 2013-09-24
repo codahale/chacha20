@@ -65,10 +65,10 @@ func NewCipher(key []byte, nonce []byte) (*Cipher, error) {
 	c := new(Cipher)
 
 	// the magic constants for 256-bit keys
-	c.input[0] = 1634760805
-	c.input[1] = 857760878
-	c.input[2] = 2036477234
-	c.input[3] = 1797285236
+	c.input[0] = 0x61707865
+	c.input[1] = 0x3320646e
+	c.input[2] = 0x79622d32
+	c.input[3] = 0x6b206574
 
 	c.input[4] = binary.LittleEndian.Uint32(key[0:])
 	c.input[5] = binary.LittleEndian.Uint32(key[4:])
