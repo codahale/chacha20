@@ -40,8 +40,6 @@ var (
 	ErrInvalidKey = errors.New("chacha20: Invalid key length (must be 256 bits)")
 	// ErrInvalidNonce is returned when the provided nonce is not 64 bits long.
 	ErrInvalidNonce = errors.New("chacha20: Invalid nonce length (must be 64 bits)")
-	// the magic constants for 256-bit keys
-	constants = []uint32{1634760805, 857760878, 2036477234, 1797285236}
 )
 
 // A Cipher is an instance of ChaCha20 using a particular key and nonce.
@@ -66,10 +64,11 @@ func NewCipher(key []byte, nonce []byte) (*Cipher, error) {
 
 	c := new(Cipher)
 
-	c.input[0] = constants[0]
-	c.input[1] = constants[1]
-	c.input[2] = constants[2]
-	c.input[3] = constants[3]
+	// the magic constants for 256-bit keys
+	c.input[0] = 1634760805
+	c.input[1] = 857760878
+	c.input[2] = 2036477234
+	c.input[3] = 1797285236
 
 	c.input[4] = binary.LittleEndian.Uint32(key[0:])
 	c.input[5] = binary.LittleEndian.Uint32(key[4:])
