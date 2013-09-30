@@ -81,6 +81,73 @@ func TestChaCha20(t *testing.T) {
 	}
 }
 
+func TestReset(t *testing.T) {
+	key := make([]byte, KeySize)
+	nonce := make([]byte, NonceSize)
+
+	c, _ := NewCipher(key, nonce)
+
+	src := make([]byte, 100)
+	dst := make([]byte, 100)
+
+	c.XORKeyStream(dst, src)
+
+	sum := 0
+	for _, v := range src {
+		sum += int(v)
+	}
+
+	for _, v := range dst {
+		sum += int(v)
+	}
+
+	if sum == 0 {
+		t.Error("Should have encrypted zeros to non-zeros but didn't — super weird")
+	}
+
+	c.Reset()
+
+	src = make([]byte, 100)
+	dst = make([]byte, 100)
+
+	c.XORKeyStream(dst, src)
+
+	sum = 0
+	for _, v := range src {
+		sum += int(v)
+	}
+
+	for _, v := range dst {
+		sum += int(v)
+	}
+
+	if sum != 0 {
+		t.Error("Should have cleared the cipher state but didn't")
+	}
+}
+
+func TestBadKeySize(t *testing.T) {
+	key := make([]byte, 3)
+	nonce := make([]byte, NonceSize)
+
+	_, err := NewCipher(key, nonce)
+
+	if err != ErrInvalidKey {
+		t.Error("Should have rejected an invalid key")
+	}
+}
+
+func TestBadNonceSize(t *testing.T) {
+	key := make([]byte, KeySize)
+	nonce := make([]byte, 3)
+
+	_, err := NewCipher(key, nonce)
+
+	if err != ErrInvalidNonce {
+		t.Error("Should have rejected an invalid nonce")
+	}
+}
+
 func ExampleCipher() {
 	key, err := hex.DecodeString("60143a3d7c7137c3622d490e7dbb85859138d198d9c648960e186412a6250722")
 	if err != nil {
