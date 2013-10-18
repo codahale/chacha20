@@ -174,17 +174,3 @@ func ExampleCipher() {
 	// Output:
 	// a05452ebd981422dcdab2c9cde0d20a03f769e87d3e976ee6d6a11
 }
-
-const benchSize = 1024 * 1024
-
-func BenchmarkChaCha20(b *testing.B) {
-	b.SetBytes(benchSize)
-	key := make([]byte, KeySize)
-	nonce := make([]byte, NonceSize)
-	input := make([]byte, benchSize)
-	output := make([]byte, benchSize)
-	c, _ := NewCipher(key, nonce)
-	for i := 0; i < b.N; i++ {
-		c.XORKeyStream(output, input)
-	}
-}

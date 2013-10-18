@@ -1,14 +1,13 @@
-package shootout
+package chacha20
 
 import (
-	"testing"
-	"crypto/cipher"
-	"github.com/codahale/chacha20"
 	"crypto/aes"
+	"crypto/cipher"
 	"crypto/rc4"
+	"testing"
 )
 
-const benchSize = 1024*1024
+const benchSize = 1024 * 1024
 
 func benchmarkStream(b *testing.B, c cipher.Stream) {
 	b.SetBytes(benchSize)
@@ -20,9 +19,9 @@ func benchmarkStream(b *testing.B, c cipher.Stream) {
 }
 
 func BenchmarkChaCha20(b *testing.B) {
-	key := make([]byte, chacha20.KeySize)
-	nonce := make([]byte, chacha20.NonceSize)
-	c, _ := chacha20.NewCipher(key, nonce)
+	key := make([]byte, KeySize)
+	nonce := make([]byte, NonceSize)
+	c, _ := NewCipher(key, nonce)
 	benchmarkStream(b, c)
 }
 
