@@ -1,21 +1,18 @@
-/*
-Package chacha20 provides a pure Go implementation of ChaCha20, a fast, secure
-stream cipher.
-
-From DJB's paper:
-
-	ChaCha8 is a 256-bit stream cipher based on the 8-round cipher Salsa20/8.
-	The changes from Salsa20/8 to ChaCha8 are designed to improve diffusion per
-	round, conjecturally increasing resistance to cryptanalysis, while
-	preserving—and often improving—time per round. ChaCha12 and ChaCha20 are
-	analogous modiﬁcations of the 12-round and 20-round ciphers Salsa20/12 and
-	Salsa20/20. This paper presents the ChaCha family and explains the
-	differences between Salsa20 and ChaCha.
-
-(from http://cr.yp.to/chacha/chacha-20080128.pdf)
-
-For more information, see http://cr.yp.to/chacha.html
-*/
+// Package chacha20 provides a pure Go implementation of ChaCha20, a fast, secure
+// stream cipher.
+//
+// From Bernstein, Daniel J. "ChaCha, a variant of Salsa20." Workshop Record of
+// SASC. 2008. (http://cr.yp.to/chacha/chacha-20080128.pdf):
+//
+//	ChaCha8 is a 256-bit stream cipher based on the 8-round cipher Salsa20/8.
+//	The changes from Salsa20/8 to ChaCha8 are designed to improve diffusion per
+//	round, conjecturally increasing resistance to cryptanalysis, while
+//	preserving—and often improving—time per round. ChaCha12 and ChaCha20 are
+//	analogous modiﬁcations of the 12-round and 20-round ciphers Salsa20/12 and
+//	Salsa20/20. This paper presents the ChaCha family and explains the
+//	differences between Salsa20 and ChaCha.
+//
+//For more information, see http://cr.yp.to/chacha.html
 package chacha20
 
 import (
