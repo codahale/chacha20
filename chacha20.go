@@ -12,7 +12,7 @@
 //	Salsa20/20. This paper presents the ChaCha family and explains the
 //	differences between Salsa20 and ChaCha.
 //
-//For more information, see http://cr.yp.to/chacha.html
+// For more information, see http://cr.yp.to/chacha.html
 package chacha20
 
 import (
