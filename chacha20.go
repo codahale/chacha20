@@ -22,11 +22,8 @@ import (
 )
 
 const (
-	// KeySize is the length of ChaCha20 keys, in bytes.
-	KeySize = 32
-
-	// NonceSize is the length of ChaCha20 nonces, in bytes.
-	NonceSize = 8
+	KeySize   = 32 // KeySize is the length of ChaCha20 keys, in bytes.
+	NonceSize = 8  // NonceSize is the length of ChaCha20 nonces, in bytes.
 
 	stateSize = 16            // the size of ChaCha20's state, in words
 	blockSize = stateSize * 4 // the size of ChaCha20's block, in bytes
