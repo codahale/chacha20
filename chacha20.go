@@ -1,5 +1,5 @@
-// Package chacha20 provides a pure Go implementation of ChaCha20, a fast, secure
-// stream cipher.
+// Package chacha20 provides a pure Go implementation of ChaCha20, a fast,
+// secure stream cipher.
 //
 // From Bernstein, Daniel J. "ChaCha, a variant of Salsa20." Workshop Record of
 // SASC. 2008. (http://cr.yp.to/chacha/chacha-20080128.pdf):
@@ -7,9 +7,9 @@
 //	ChaCha8 is a 256-bit stream cipher based on the 8-round cipher Salsa20/8.
 //	The changes from Salsa20/8 to ChaCha8 are designed to improve diffusion per
 //	round, conjecturally increasing resistance to cryptanalysis, while
-//	preserving—and often improving—time per round. ChaCha12 and ChaCha20 are
-//	analogous modiﬁcations of the 12-round and 20-round ciphers Salsa20/12 and
-//	Salsa20/20. This paper presents the ChaCha family and explains the
+//	preserving -- and often improving -- time per round. ChaCha12 and ChaCha20
+//	are analogous modiﬁcations of the 12-round and 20-round ciphers Salsa20/12
+//	and Salsa20/20. This paper presents the ChaCha family and explains the
 //	differences between Salsa20 and ChaCha.
 //
 // For more information, see http://cr.yp.to/chacha.html
@@ -23,38 +23,18 @@ import (
 )
 
 const (
-	KeySize   = 32 // KeySize is the length of ChaCha20 keys, in bytes.
-	NonceSize = 8  // NonceSize is the length of ChaCha20 nonces, in bytes.
-
-	stateSize = 16            // the size of ChaCha20's state, in words
-	blockSize = stateSize * 4 // the size of ChaCha20's block, in bytes
+	// KeySize is the length of ChaCha20 keys, in bytes.
+	KeySize = 32
+	// NonceSize is the length of ChaCha20 nonces, in bytes.
+	NonceSize = 8
 )
 
 var (
 	// ErrInvalidKey is returned when the provided key is not 256 bits long.
-	ErrInvalidKey = errors.New("chacha20: Invalid key length (must be 256 bits)")
+	ErrInvalidKey = errors.New("invalid key length (must be 256 bits)")
 	// ErrInvalidNonce is returned when the provided nonce is not 64 bits long.
-	ErrInvalidNonce = errors.New("chacha20: Invalid nonce length (must be 64 bits)")
-
-	bigEndian bool // we're running on a bigEndian CPU
+	ErrInvalidNonce = errors.New("invalid nonce length (must be 64 bits)")
 )
-
-// Do some up-front bookkeeping on what sort of CPU we're using. ChaCha20 treats
-// its state as a little-endian byte array when it comes to generating the
-// keystream, which allows for a zero-copy approach to the core transform. On
-// big-endian architectures, we have to take a hit to reverse the bytes.
-func init() {
-	x := uint32(0x04030201)
-	y := [4]byte{0x1, 0x2, 0x3, 0x4}
-	bigEndian = *(*[4]byte)(unsafe.Pointer(&x)) != y
-}
-
-// A Cipher is an instance of ChaCha20 using a particular key and nonce.
-type Cipher struct {
-	state  [stateSize]uint32 // the state as an array of 16 32-bit words
-	block  [blockSize]byte   // the keystream as an array of 64 bytes
-	offset int               // the offset of used bytes in block
-}
 
 // New creates and returns a new cipher.Stream. The key argument must be 256
 // bits long, and the nonce argument must be 64 bits long. The nonce must be
@@ -152,4 +132,24 @@ func (s *stream) advance() {
 	if i == 0 {
 		s.state[13]++
 	}
+}
+
+const (
+	wordSize  = 4                    // the size of ChaCha20's words
+	stateSize = 16                   // the size of ChaCha20's state, in words
+	blockSize = stateSize * wordSize // the size of ChaCha20's block, in bytes
+)
+
+var (
+	bigEndian bool // whether or not we're running on a bigEndian CPU
+)
+
+// Do some up-front bookkeeping on what sort of CPU we're using. ChaCha20 treats
+// its state as a little-endian byte array when it comes to generating the
+// keystream, which allows for a zero-copy approach to the core transform. On
+// big-endian architectures, we have to take a hit to reverse the bytes.
+func init() {
+	x := uint32(0x04030201)
+	y := [4]byte{0x1, 0x2, 0x3, 0x4}
+	bigEndian = *(*[4]byte)(unsafe.Pointer(&x)) != y
 }
