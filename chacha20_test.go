@@ -1,12 +1,13 @@
-package chacha20
+package chacha20_test
 
 import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
 	"testing"
-)
 
+	"github.com/codahale/chacha20"
+)
 
 // stolen from http://tools.ietf.org/html/draft-agl-tls-chacha20poly1305-00#section-7
 var testVectors = [][]string{
@@ -51,7 +52,7 @@ func TestChaCha20(t *testing.T) {
 			t.Error(err)
 		}
 
-		c, err := NewCipher(key, nonce)
+		c, err := chacha20.NewCipher(key, nonce)
 		if err != nil {
 			t.Error(err)
 		}
@@ -80,22 +81,22 @@ func TestChaCha20(t *testing.T) {
 
 func TestBadKeySize(t *testing.T) {
 	key := make([]byte, 3)
-	nonce := make([]byte, NonceSize)
+	nonce := make([]byte, chacha20.NonceSize)
 
-	_, err := NewCipher(key, nonce)
+	_, err := chacha20.NewCipher(key, nonce)
 
-	if err != ErrInvalidKey {
+	if err != chacha20.ErrInvalidKey {
 		t.Error("Should have rejected an invalid key")
 	}
 }
 
 func TestBadNonceSize(t *testing.T) {
-	key := make([]byte, KeySize)
+	key := make([]byte, chacha20.KeySize)
 	nonce := make([]byte, 3)
 
-	_, err := NewCipher(key, nonce)
+	_, err := chacha20.NewCipher(key, nonce)
 
-	if err != ErrInvalidNonce {
+	if err != chacha20.ErrInvalidNonce {
 		t.Error("Should have rejected an invalid nonce")
 	}
 }
@@ -112,7 +113,7 @@ func ExampleCipher() {
 		panic(err)
 	}
 
-	c, err := NewCipher(key, nonce)
+	c, err := chacha20.NewCipher(key, nonce)
 	if err != nil {
 		panic(err)
 	}
