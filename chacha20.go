@@ -16,6 +16,7 @@
 package chacha20
 
 import (
+	"crypto/cipher"
 	"encoding/binary"
 	"errors"
 	"unsafe"
@@ -59,7 +60,7 @@ type Cipher struct {
 // bits long, and the nonce argument must be 64 bits long. The nonce must be
 // randomly generated or used only once. This Cipher instance must not be used
 // to encrypt more than 2^70 bytes (~1 zettabyte).
-func NewCipher(key []byte, nonce []byte) (*Cipher, error) {
+func NewCipher(key []byte, nonce []byte) (cipher.Stream, error) {
 	if len(key) != KeySize {
 		return nil, ErrInvalidKey
 	}
@@ -68,97 +69,87 @@ func NewCipher(key []byte, nonce []byte) (*Cipher, error) {
 		return nil, ErrInvalidNonce
 	}
 
-	c := new(Cipher)
+	s := new(stream)
 
 	// the magic constants for 256-bit keys
-	c.state[0] = 0x61707865
-	c.state[1] = 0x3320646e
-	c.state[2] = 0x79622d32
-	c.state[3] = 0x6b206574
+	s.state[0] = 0x61707865
+	s.state[1] = 0x3320646e
+	s.state[2] = 0x79622d32
+	s.state[3] = 0x6b206574
 
-	c.state[4] = binary.LittleEndian.Uint32(key[0:])
-	c.state[5] = binary.LittleEndian.Uint32(key[4:])
-	c.state[6] = binary.LittleEndian.Uint32(key[8:])
-	c.state[7] = binary.LittleEndian.Uint32(key[12:])
-	c.state[8] = binary.LittleEndian.Uint32(key[16:])
-	c.state[9] = binary.LittleEndian.Uint32(key[20:])
-	c.state[10] = binary.LittleEndian.Uint32(key[24:])
-	c.state[11] = binary.LittleEndian.Uint32(key[28:])
+	s.state[4] = binary.LittleEndian.Uint32(key[0:])
+	s.state[5] = binary.LittleEndian.Uint32(key[4:])
+	s.state[6] = binary.LittleEndian.Uint32(key[8:])
+	s.state[7] = binary.LittleEndian.Uint32(key[12:])
+	s.state[8] = binary.LittleEndian.Uint32(key[16:])
+	s.state[9] = binary.LittleEndian.Uint32(key[20:])
+	s.state[10] = binary.LittleEndian.Uint32(key[24:])
+	s.state[11] = binary.LittleEndian.Uint32(key[28:])
 
-	c.state[12] = 0
-	c.state[13] = 0
-	c.state[14] = binary.LittleEndian.Uint32(nonce[0:])
-	c.state[15] = binary.LittleEndian.Uint32(nonce[4:])
+	s.state[12] = 0
+	s.state[13] = 0
+	s.state[14] = binary.LittleEndian.Uint32(nonce[0:])
+	s.state[15] = binary.LittleEndian.Uint32(nonce[4:])
 
-	c.advance()
+	s.advance()
 
-	return c, nil
+	return s, nil
 }
 
-// XORKeyStream sets dst to the result of XORing src with the key stream.
-// Dst and src may be the same slice but otherwise should not overlap. You
-// should not encrypt more than 2^70 bytes (~1 zettabyte) without re-keying and
-// using a new nonce.
-func (c *Cipher) XORKeyStream(dst, src []byte) {
+type stream struct {
+	state  [stateSize]uint32 // the state as an array of 16 32-bit words
+	block  [blockSize]byte   // the keystream as an array of 64 bytes
+	offset int               // the offset of used bytes in block
+}
+
+func (s *stream) XORKeyStream(dst, src []byte) {
 	// Stride over the input in 64-byte blocks, minus the amount of keystream
 	// previously used. This will produce best results when processing blocks
 	// of a size evenly divisible by 64.
 	i := 0
 	max := len(src)
 	for i < max {
-		gap := blockSize - c.offset
+		gap := blockSize - s.offset
 
 		limit := i + gap
 		if limit > max {
 			limit = max
 		}
 
-		o := c.offset
+		o := s.offset
 		for j := i; j < limit; j++ {
-			dst[j] = src[j] ^ c.block[o]
+			dst[j] = src[j] ^ s.block[o]
 			o++
 		}
 
 		i += gap
-		c.offset = o
+		s.offset = o
 
 		if o == blockSize {
-			c.advance()
+			s.advance()
 		}
 	}
-}
-
-// Reset zeros the key data so that it will no longer appear in the process's
-// memory.
-func (c *Cipher) Reset() {
-	for i := range c.state {
-		c.state[i] = 0
-	}
-	for i := range c.block {
-		c.block[i] = 0
-	}
-	c.offset = 0
 }
 
 // BUG(codahale): Totally untested on big-endian CPUs. Would very much
 // appreciate someone with an ARM device giving this a swing.
 
 // advances the keystream
-func (c *Cipher) advance() {
-	core(&c.state, (*[stateSize]uint32)(unsafe.Pointer(&c.block)))
+func (s *stream) advance() {
+	core(&s.state, (*[stateSize]uint32)(unsafe.Pointer(&s.block)))
 
 	if bigEndian {
 		j := blockSize - 1
 		for i := 0; i < blockSize/2; i++ {
-			c.block[j], c.block[i] = c.block[i], c.block[j]
+			s.block[j], s.block[i] = s.block[i], s.block[j]
 			j--
 		}
 	}
 
-	c.offset = 0
-	i := c.state[12] + 1
-	c.state[12] = i
+	s.offset = 0
+	i := s.state[12] + 1
+	s.state[12] = i
 	if i == 0 {
-		c.state[13]++
+		s.state[13]++
 	}
 }

@@ -2,14 +2,11 @@ package chacha20
 
 import (
 	"bytes"
-	"crypto/cipher"
 	"encoding/hex"
 	"fmt"
 	"testing"
 )
 
-// assert that a pointer to Cipher actually meets the cipher.Stream interface
-var _ cipher.Stream = &Cipher{}
 
 // stolen from http://tools.ietf.org/html/draft-agl-tls-chacha20poly1305-00#section-7
 var testVectors = [][]string{
@@ -78,51 +75,6 @@ func TestChaCha20(t *testing.T) {
 				}
 			}
 		}
-	}
-}
-
-func TestReset(t *testing.T) {
-	key := make([]byte, KeySize)
-	nonce := make([]byte, NonceSize)
-
-	c, _ := NewCipher(key, nonce)
-
-	src := make([]byte, 100)
-	dst := make([]byte, 100)
-
-	c.XORKeyStream(dst, src)
-
-	sum := 0
-	for _, v := range src {
-		sum += int(v)
-	}
-
-	for _, v := range dst {
-		sum += int(v)
-	}
-
-	if sum == 0 {
-		t.Error("Should have encrypted zeros to non-zeros but didn't — super weird")
-	}
-
-	c.Reset()
-
-	src = make([]byte, 100)
-	dst = make([]byte, 100)
-
-	c.XORKeyStream(dst, src)
-
-	sum = 0
-	for _, v := range src {
-		sum += int(v)
-	}
-
-	for _, v := range dst {
-		sum += int(v)
-	}
-
-	if sum != 0 {
-		t.Error("Should have cleared the cipher state but didn't")
 	}
 }
 
