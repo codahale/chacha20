@@ -52,7 +52,7 @@ func TestChaCha20(t *testing.T) {
 			t.Error(err)
 		}
 
-		c, err := chacha20.NewCipher(key, nonce)
+		c, err := chacha20.New(key, nonce)
 		if err != nil {
 			t.Error(err)
 		}
@@ -83,7 +83,7 @@ func TestBadKeySize(t *testing.T) {
 	key := make([]byte, 3)
 	nonce := make([]byte, chacha20.NonceSize)
 
-	_, err := chacha20.NewCipher(key, nonce)
+	_, err := chacha20.New(key, nonce)
 
 	if err != chacha20.ErrInvalidKey {
 		t.Error("Should have rejected an invalid key")
@@ -94,7 +94,7 @@ func TestBadNonceSize(t *testing.T) {
 	key := make([]byte, chacha20.KeySize)
 	nonce := make([]byte, 3)
 
-	_, err := chacha20.NewCipher(key, nonce)
+	_, err := chacha20.New(key, nonce)
 
 	if err != chacha20.ErrInvalidNonce {
 		t.Error("Should have rejected an invalid nonce")
@@ -113,7 +113,7 @@ func ExampleCipher() {
 		panic(err)
 	}
 
-	c, err := chacha20.NewCipher(key, nonce)
+	c, err := chacha20.New(key, nonce)
 	if err != nil {
 		panic(err)
 	}

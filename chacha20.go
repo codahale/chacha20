@@ -56,11 +56,11 @@ type Cipher struct {
 	offset int               // the offset of used bytes in block
 }
 
-// NewCipher creates and returns a new Cipher.  The key argument must be 256
+// New creates and returns a new cipher.Stream. The key argument must be 256
 // bits long, and the nonce argument must be 64 bits long. The nonce must be
-// randomly generated or used only once. This Cipher instance must not be used
+// randomly generated or used only once. This Stream instance must not be used
 // to encrypt more than 2^70 bytes (~1 zettabyte).
-func NewCipher(key []byte, nonce []byte) (cipher.Stream, error) {
+func New(key []byte, nonce []byte) (cipher.Stream, error) {
 	if len(key) != KeySize {
 		return nil, ErrInvalidKey
 	}
