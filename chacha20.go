@@ -27,8 +27,8 @@ const (
 	KeySize = 32
 	// NonceSize is the length of ChaCha20 nonces, in bytes.
 	NonceSize = 8
-	// Nonce24Size is the length of XChaCha20 nonces, in bytes.
-	Nonce24Size = 24
+	// XNonceSize is the length of XChaCha20 nonces, in bytes.
+	XNonceSize = 24
 )
 
 var (
@@ -36,9 +36,9 @@ var (
 	ErrInvalidKey = errors.New("invalid key length (must be 256 bits)")
 	// ErrInvalidNonce is returned when the provided nonce is not 64 bits long.
 	ErrInvalidNonce = errors.New("invalid nonce length (must be 64 bits)")
-	// ErrInvalidNonce24 is returned when the provided nonce is not 192 bits
+	// ErrInvalidXNonce is returned when the provided nonce is not 192 bits
 	// long.
-	ErrInvalidNonce24 = errors.New("invalid nonce length (must be 192 bits)")
+	ErrInvalidXNonce = errors.New("invalid nonce length (must be 192 bits)")
 )
 
 // New creates and returns a new cipher.Stream. The key argument must be 256
@@ -70,8 +70,8 @@ func NewXChaCha(key []byte, nonce []byte) (cipher.Stream, error) {
 		return nil, ErrInvalidKey
 	}
 
-	if len(nonce) != Nonce24Size {
-		return nil, ErrInvalidNonce24
+	if len(nonce) != XNonceSize {
+		return nil, ErrInvalidXNonce
 	}
 
 	s := new(stream)
@@ -152,7 +152,7 @@ func (s *stream) init(key []byte, nonce []byte) {
 		s.state[13] = 0
 		s.state[14] = binary.LittleEndian.Uint32(nonce[0:])
 		s.state[15] = binary.LittleEndian.Uint32(nonce[4:])
-	case Nonce24Size:
+	case XNonceSize:
 		// XChaCha20 derives the subkey via HChaCha initialized
 		// with the first 16 bytes of the nonce.
 		s.state[12] = binary.LittleEndian.Uint32(nonce[0:])
