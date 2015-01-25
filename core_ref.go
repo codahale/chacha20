@@ -3,7 +3,7 @@
 
 package chacha20
 
-func core(input, output *[stateSize]uint32) {
+func core(input, output *[stateSize]uint32, hchacha bool) {
 	var (
 		x00 = input[0]
 		x01 = input[1]
@@ -128,20 +128,39 @@ func core(input, output *[stateSize]uint32) {
 		x04 = (x << 7) | (x >> 25)
 	}
 
-	output[0] = x00 + input[0]
-	output[1] = x01 + input[1]
-	output[2] = x02 + input[2]
-	output[3] = x03 + input[3]
-	output[4] = x04 + input[4]
-	output[5] = x05 + input[5]
-	output[6] = x06 + input[6]
-	output[7] = x07 + input[7]
-	output[8] = x08 + input[8]
-	output[9] = x09 + input[9]
-	output[10] = x10 + input[10]
-	output[11] = x11 + input[11]
-	output[12] = x12 + input[12]
-	output[13] = x13 + input[13]
-	output[14] = x14 + input[14]
-	output[15] = x15 + input[15]
+	if !hchacha {
+		output[0] = x00 + input[0]
+		output[1] = x01 + input[1]
+		output[2] = x02 + input[2]
+		output[3] = x03 + input[3]
+		output[4] = x04 + input[4]
+		output[5] = x05 + input[5]
+		output[6] = x06 + input[6]
+		output[7] = x07 + input[7]
+		output[8] = x08 + input[8]
+		output[9] = x09 + input[9]
+		output[10] = x10 + input[10]
+		output[11] = x11 + input[11]
+		output[12] = x12 + input[12]
+		output[13] = x13 + input[13]
+		output[14] = x14 + input[14]
+		output[15] = x15 + input[15]
+	} else {
+		output[0] = x00
+		output[1] = x01
+		output[2] = x02
+		output[3] = x03
+		output[4] = x04
+		output[5] = x05
+		output[6] = x06
+		output[7] = x07
+		output[8] = x08
+		output[9] = x09
+		output[10] = x10
+		output[11] = x11
+		output[12] = x12
+		output[13] = x13
+		output[14] = x14
+		output[15] = x15
+	}
 }

@@ -27,6 +27,8 @@ const (
 	KeySize = 32
 	// NonceSize is the length of ChaCha20 nonces, in bytes.
 	NonceSize = 8
+	// Nonce24Size is the length of XChaCha20 nonces, in bytes.
+	Nonce24Size = 24
 )
 
 var (
@@ -34,6 +36,9 @@ var (
 	ErrInvalidKey = errors.New("invalid key length (must be 256 bits)")
 	// ErrInvalidNonce is returned when the provided nonce is not 64 bits long.
 	ErrInvalidNonce = errors.New("invalid nonce length (must be 64 bits)")
+	// ErrInvalidNonce24 is returned when the provided nonce is not 192 bits
+	// long.
+	ErrInvalidNonce24 = errors.New("invalid nonce length (must be 192 bits)")
 )
 
 // New creates and returns a new cipher.Stream. The key argument must be 256
@@ -50,26 +55,39 @@ func New(key []byte, nonce []byte) (cipher.Stream, error) {
 	}
 
 	s := new(stream)
+	s.init(key, nonce)
+	s.advance()
 
-	// the magic constants for 256-bit keys
-	s.state[0] = 0x61707865
-	s.state[1] = 0x3320646e
-	s.state[2] = 0x79622d32
-	s.state[3] = 0x6b206574
+	return s, nil
+}
 
-	s.state[4] = binary.LittleEndian.Uint32(key[0:])
-	s.state[5] = binary.LittleEndian.Uint32(key[4:])
-	s.state[6] = binary.LittleEndian.Uint32(key[8:])
-	s.state[7] = binary.LittleEndian.Uint32(key[12:])
-	s.state[8] = binary.LittleEndian.Uint32(key[16:])
-	s.state[9] = binary.LittleEndian.Uint32(key[20:])
-	s.state[10] = binary.LittleEndian.Uint32(key[24:])
-	s.state[11] = binary.LittleEndian.Uint32(key[28:])
+// NewXChaCha creates and returns a new cipher.Stream. The key argument must be
+// 256 bits long, and the nonce argument must be 192 bits long. The nonce must
+// be randomly generated or only used once. This Stream instance must not be
+// used to encrypt more than 2^70 bytes (~1 zetta byte).
+func NewXChaCha(key []byte, nonce []byte) (cipher.Stream, error) {
+	if len(key) != KeySize {
+		return nil, ErrInvalidKey
+	}
 
+	if len(nonce) != Nonce24Size {
+		return nil, ErrInvalidNonce24
+	}
+
+	s := new(stream)
+	s.init(key, nonce)
+
+	// Call HChaCha to derive the subkey using the key and the first 16 bytes
+	// of the nonce, and re-initialize the state using the subkey and the
+	// remaining nonce.
+	blockArr := (*[stateSize]uint32)(unsafe.Pointer(&s.block))
+	core(&s.state, blockArr, true)
+	copy(s.state[4:8], blockArr[0:4])
+	copy(s.state[8:12], blockArr[12:16])
 	s.state[12] = 0
 	s.state[13] = 0
-	s.state[14] = binary.LittleEndian.Uint32(nonce[0:])
-	s.state[15] = binary.LittleEndian.Uint32(nonce[4:])
+	s.state[14] = binary.LittleEndian.Uint32(nonce[16:])
+	s.state[15] = binary.LittleEndian.Uint32(nonce[20:])
 
 	s.advance()
 
@@ -111,12 +129,48 @@ func (s *stream) XORKeyStream(dst, src []byte) {
 	}
 }
 
+func (s *stream) init(key []byte, nonce []byte) {
+	// the magic constants for 256-bit keys
+	s.state[0] = 0x61707865
+	s.state[1] = 0x3320646e
+	s.state[2] = 0x79622d32
+	s.state[3] = 0x6b206574
+
+	s.state[4] = binary.LittleEndian.Uint32(key[0:])
+	s.state[5] = binary.LittleEndian.Uint32(key[4:])
+	s.state[6] = binary.LittleEndian.Uint32(key[8:])
+	s.state[7] = binary.LittleEndian.Uint32(key[12:])
+	s.state[8] = binary.LittleEndian.Uint32(key[16:])
+	s.state[9] = binary.LittleEndian.Uint32(key[20:])
+	s.state[10] = binary.LittleEndian.Uint32(key[24:])
+	s.state[11] = binary.LittleEndian.Uint32(key[28:])
+
+	switch len(nonce) {
+	case NonceSize:
+		// ChaCha20 uses 8 byte nonces.
+		s.state[12] = 0
+		s.state[13] = 0
+		s.state[14] = binary.LittleEndian.Uint32(nonce[0:])
+		s.state[15] = binary.LittleEndian.Uint32(nonce[4:])
+	case Nonce24Size:
+		// XChaCha20 derives the subkey via HChaCha initialized
+		// with the first 16 bytes of the nonce.
+		s.state[12] = binary.LittleEndian.Uint32(nonce[0:])
+		s.state[13] = binary.LittleEndian.Uint32(nonce[4:])
+		s.state[14] = binary.LittleEndian.Uint32(nonce[8:])
+		s.state[15] = binary.LittleEndian.Uint32(nonce[12:])
+	default:
+		// Never happens, both ctors validate the nonce length.
+		panic("invalid nonce size")
+	}
+}
+
 // BUG(codahale): Totally untested on big-endian CPUs. Would very much
 // appreciate someone with an ARM device giving this a swing.
 
 // advances the keystream
 func (s *stream) advance() {
-	core(&s.state, (*[stateSize]uint32)(unsafe.Pointer(&s.block)))
+	core(&s.state, (*[stateSize]uint32)(unsafe.Pointer(&s.block)), false)
 
 	if bigEndian {
 		j := blockSize - 1
