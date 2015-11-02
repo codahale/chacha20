@@ -343,6 +343,17 @@ func TestBadNonceSize(t *testing.T) {
 	}
 }
 
+func TestBadRoundNumber(t *testing.T) {
+	key := make([]byte, chacha20.KeySize)
+	nonce := make([]byte, chacha20.NonceSize)
+
+	_, err := chacha20.New(key, nonce, 5)
+
+	if err != chacha20.ErrInvalidRounds {
+		t.Error("Should have rejected an invalid round number")
+	}
+}
+
 func ExampleCipher() {
 	key, err := hex.DecodeString("60143a3d7c7137c3622d490e7dbb85859138d198d9c648960e186412a6250722")
 	if err != nil {

@@ -39,6 +39,9 @@ var (
 	// ErrInvalidXNonce is returned when the provided nonce is not 192 bits
 	// long.
 	ErrInvalidXNonce = errors.New("invalid nonce length (must be 192 bits)")
+	// ErrInvalidRounds is returned when the provided rounds is not
+	// 8, 12, or 20.
+	ErrInvalidRounds = errors.New("invalid rounds number (must be 8, 12, or 20)")
 )
 
 // New creates and returns a new cipher.Stream. The key argument must be 256
@@ -52,6 +55,10 @@ func New(key []byte, nonce []byte, rounds uint8) (cipher.Stream, error) {
 
 	if len(nonce) != NonceSize {
 		return nil, ErrInvalidNonce
+	}
+
+	if (rounds != 8) && (rounds != 12) && (rounds != 20) {
+		return nil, ErrInvalidRounds
 	}
 
 	s := new(stream)
@@ -72,6 +79,10 @@ func NewXChaCha(key []byte, nonce []byte, rounds uint8) (cipher.Stream, error) {
 
 	if len(nonce) != XNonceSize {
 		return nil, ErrInvalidXNonce
+	}
+
+	if (rounds != 8) && (rounds != 12) && (rounds != 20) {
+		return nil, ErrInvalidRounds
 	}
 
 	s := new(stream)
