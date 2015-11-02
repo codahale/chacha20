@@ -45,7 +45,7 @@ var (
 // bits long, and the nonce argument must be 64 bits long. The nonce must be
 // randomly generated or used only once. This Stream instance must not be used
 // to encrypt more than 2^70 bytes (~1 zettabyte).
-func New(key []byte, nonce []byte) (cipher.Stream, error) {
+func New(key []byte, nonce []byte, rounds uint8) (cipher.Stream, error) {
 	if len(key) != KeySize {
 		return nil, ErrInvalidKey
 	}
@@ -55,7 +55,7 @@ func New(key []byte, nonce []byte) (cipher.Stream, error) {
 	}
 
 	s := new(stream)
-	s.init(key, nonce)
+	s.init(key, nonce, rounds)
 	s.advance()
 
 	return s, nil
@@ -65,7 +65,7 @@ func New(key []byte, nonce []byte) (cipher.Stream, error) {
 // 256 bits long, and the nonce argument must be 192 bits long. The nonce must
 // be randomly generated or only used once. This Stream instance must not be
 // used to encrypt more than 2^70 bytes (~1 zetta byte).
-func NewXChaCha(key []byte, nonce []byte) (cipher.Stream, error) {
+func NewXChaCha(key []byte, nonce []byte, rounds uint8) (cipher.Stream, error) {
 	if len(key) != KeySize {
 		return nil, ErrInvalidKey
 	}
@@ -75,13 +75,13 @@ func NewXChaCha(key []byte, nonce []byte) (cipher.Stream, error) {
 	}
 
 	s := new(stream)
-	s.init(key, nonce)
+	s.init(key, nonce, rounds)
 
 	// Call HChaCha to derive the subkey using the key and the first 16 bytes
 	// of the nonce, and re-initialize the state using the subkey and the
 	// remaining nonce.
 	blockArr := (*[stateSize]uint32)(unsafe.Pointer(&s.block))
-	core(&s.state, blockArr, true)
+	core(&s.state, blockArr, s.rounds, true)
 	copy(s.state[4:8], blockArr[0:4])
 	copy(s.state[8:12], blockArr[12:16])
 	s.state[12] = 0
@@ -98,6 +98,7 @@ type stream struct {
 	state  [stateSize]uint32 // the state as an array of 16 32-bit words
 	block  [blockSize]byte   // the keystream as an array of 64 bytes
 	offset int               // the offset of used bytes in block
+	rounds uint8
 }
 
 func (s *stream) XORKeyStream(dst, src []byte) {
@@ -129,7 +130,7 @@ func (s *stream) XORKeyStream(dst, src []byte) {
 	}
 }
 
-func (s *stream) init(key []byte, nonce []byte) {
+func (s *stream) init(key []byte, nonce []byte, rounds uint8) {
 	// the magic constants for 256-bit keys
 	s.state[0] = 0x61707865
 	s.state[1] = 0x3320646e
@@ -163,6 +164,8 @@ func (s *stream) init(key []byte, nonce []byte) {
 		// Never happens, both ctors validate the nonce length.
 		panic("invalid nonce size")
 	}
+
+	s.rounds = rounds
 }
 
 // BUG(codahale): Totally untested on big-endian CPUs. Would very much
@@ -170,7 +173,7 @@ func (s *stream) init(key []byte, nonce []byte) {
 
 // advances the keystream
 func (s *stream) advance() {
-	core(&s.state, (*[stateSize]uint32)(unsafe.Pointer(&s.block)), false)
+	core(&s.state, (*[stateSize]uint32)(unsafe.Pointer(&s.block)), s.rounds, false)
 
 	if bigEndian {
 		j := blockSize - 1
