@@ -238,6 +238,49 @@ var testVectors = []testVector{
 
 func TestChaCha20(t *testing.T) {
 	for i, vector := range testVectors {
+		if vector.rounds == 20 {
+			t.Logf("Running test vector %d", i)
+
+			key, err := hex.DecodeString(vector.key)
+			if err != nil {
+				t.Error(err)
+			}
+
+			nonce, err := hex.DecodeString(vector.nonce)
+			if err != nil {
+				t.Error(err)
+			}
+
+			c, err := chacha20.New(key, nonce)
+			if err != nil {
+				t.Error(err)
+			}
+
+			expected, err := hex.DecodeString(vector.keyStream)
+			if err != nil {
+				t.Error(err)
+			}
+
+			src := make([]byte, len(expected))
+			dst := make([]byte, len(expected))
+			c.XORKeyStream(dst, src)
+
+			if !bytes.Equal(expected, dst) {
+				t.Errorf("Bad keystream: expected %x, was %x", expected, dst)
+
+				for i, v := range expected {
+					if dst[i] != v {
+						t.Logf("Mismatch at offset %d: %x vs %x", i, v, dst[i])
+						break
+					}
+				}
+			}
+		}
+	}
+}
+
+func TestChaCha20WithRounds(t *testing.T) {
+	for i, vector := range testVectors {
 		t.Logf("Running test vector %d", i)
 
 		key, err := hex.DecodeString(vector.key)
@@ -250,7 +293,7 @@ func TestChaCha20(t *testing.T) {
 			t.Error(err)
 		}
 
-		c, err := chacha20.New(key, nonce, vector.rounds)
+		c, err := chacha20.NewWithRounds(key, nonce, vector.rounds)
 		if err != nil {
 			t.Error(err)
 		}
@@ -310,7 +353,7 @@ func TestXChaCha20(t *testing.T) {
 		0xe4, 0x18, 0x3a,
 	}
 
-	c, err := chacha20.NewXChaCha(key, nonce, 20)
+	c, err := chacha20.NewXChaCha(key, nonce)
 	if err != nil {
 		t.Error(err)
 	}
@@ -325,7 +368,7 @@ func TestBadKeySize(t *testing.T) {
 	key := make([]byte, 3)
 	nonce := make([]byte, chacha20.NonceSize)
 
-	_, err := chacha20.New(key, nonce, 20)
+	_, err := chacha20.New(key, nonce)
 
 	if err != chacha20.ErrInvalidKey {
 		t.Error("Should have rejected an invalid key")
@@ -336,7 +379,7 @@ func TestBadNonceSize(t *testing.T) {
 	key := make([]byte, chacha20.KeySize)
 	nonce := make([]byte, 3)
 
-	_, err := chacha20.New(key, nonce, 20)
+	_, err := chacha20.New(key, nonce)
 
 	if err != chacha20.ErrInvalidNonce {
 		t.Error("Should have rejected an invalid nonce")
@@ -347,7 +390,7 @@ func TestBadRoundNumber(t *testing.T) {
 	key := make([]byte, chacha20.KeySize)
 	nonce := make([]byte, chacha20.NonceSize)
 
-	_, err := chacha20.New(key, nonce, 5)
+	_, err := chacha20.NewWithRounds(key, nonce, 5)
 
 	if err != chacha20.ErrInvalidRounds {
 		t.Error("Should have rejected an invalid round number")
@@ -366,7 +409,7 @@ func ExampleCipher() {
 		panic(err)
 	}
 
-	c, err := chacha20.New(key, nonce, 20)
+	c, err := chacha20.New(key, nonce)
 	if err != nil {
 		panic(err)
 	}

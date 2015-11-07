@@ -23,7 +23,7 @@ func benchmarkStream(b *testing.B, c cipher.Stream) {
 func BenchmarkChaCha20(b *testing.B) {
 	key := make([]byte, chacha20.KeySize)
 	nonce := make([]byte, chacha20.NonceSize)
-	c, _ := chacha20.New(key, nonce, 20)
+	c, _ := chacha20.New(key, nonce)
 	benchmarkStream(b, c)
 }
 

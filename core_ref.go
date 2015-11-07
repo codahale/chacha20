@@ -29,8 +29,7 @@ func core(input, output *[stateSize]uint32, rounds uint8, hchacha bool) {
 	// (Tested on a i5 Haswell, likely applies to Sandy Bridge+), due to uop
 	// cache thrashing.  The straight forward 2 rounds per loop implementation
 	// of this has double the performance of the fully unrolled version.
-	iteration := rounds / 2
-	for i := uint8(0); i < iteration; i++ {
+	for i := uint8(0); i < rounds; i += 2 {
 		x00 += x04
 		x = x12 ^ x00
 		x12 = (x << 16) | (x >> 16)

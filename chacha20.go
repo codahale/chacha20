@@ -48,7 +48,13 @@ var (
 // bits long, and the nonce argument must be 64 bits long. The nonce must be
 // randomly generated or used only once. This Stream instance must not be used
 // to encrypt more than 2^70 bytes (~1 zettabyte).
-func New(key []byte, nonce []byte, rounds uint8) (cipher.Stream, error) {
+func New(key []byte, nonce []byte) (cipher.Stream, error) {
+	return NewWithRounds(key, nonce, 20)
+}
+
+// NewWithRounds creates and returns a new cipher.Stream just like New but
+// the rounds number of 8, 12, or 20 can be specified.
+func NewWithRounds(key []byte, nonce []byte, rounds uint8) (cipher.Stream, error) {
 	if len(key) != KeySize {
 		return nil, ErrInvalidKey
 	}
@@ -72,7 +78,13 @@ func New(key []byte, nonce []byte, rounds uint8) (cipher.Stream, error) {
 // 256 bits long, and the nonce argument must be 192 bits long. The nonce must
 // be randomly generated or only used once. This Stream instance must not be
 // used to encrypt more than 2^70 bytes (~1 zetta byte).
-func NewXChaCha(key []byte, nonce []byte, rounds uint8) (cipher.Stream, error) {
+func NewXChaCha(key []byte, nonce []byte) (cipher.Stream, error) {
+	return NewXChaChaWithRounds(key, nonce, 20)
+}
+
+// NewXChaChaWithRounds creates and returns a new cipher.Stream just like
+// NewXChaCha but the rounds number of 8, 12, or 20 can be specified.
+func NewXChaChaWithRounds(key []byte, nonce []byte, rounds uint8) (cipher.Stream, error) {
 	if len(key) != KeySize {
 		return nil, ErrInvalidKey
 	}
